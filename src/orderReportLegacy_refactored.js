@@ -224,13 +224,15 @@ function RemiseParPaliers(sub,level){
      }
     return disc
 }
-// Fonction principale 
-function run() {
-    getCSVPaths()
-    fillArrays()
-    // Calcul des points de fidélité (première duplication)
-    loyaltyPoints = LoyaltyPointCalc()
-    // Génération du rapport (mélange calculs + formatage + I/O)
+function BonusWeekend(cid,dis){
+        const firstOrderDate = totalsByCustomer[cid].items[0]?.date || '';
+        const dayOfWeek = firstOrderDate ? new Date(firstOrderDate).getDay() : 0;
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            dis = dis * 1.05; // 5% de bonus sur la remise
+        }
+        return dis
+}
+function GenerationRapport(){
     for (const cid of sortCustomerIDsArray()) {
         const cust = customers[cid] || {};
         const name = cust.name || 'Unknown';
@@ -245,11 +247,7 @@ function run() {
         let disc = RemiseParPaliers(sub,level)
 
         // Bonus weekend (règle cachée basée sur la date)
-        const firstOrderDate = totalsByCustomer[cid].items[0]?.date || '';
-        const dayOfWeek = firstOrderDate ? new Date(firstOrderDate).getDay() : 0;
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            disc = disc * 1.05; // 5% de bonus sur la remise
-        }
+        disc = BonusWeekend(cid,disc)
 
         // Calcul remise fidélité (duplication #2)
         let loyaltyDiscount = 0.0;
@@ -377,12 +375,20 @@ function run() {
             loyalty_points: Math.floor(pts)
         });
     }
+}
+// Fonction principale 
+function run() {
+    getCSVPaths()
+    fillArrays()
+    // Calcul des points de fidélité (première duplication)
+    loyaltyPoints = LoyaltyPointCalc()
+    // Génération du rapport (mélange calculs + formatage + I/O)
+    GenerationRapport()
 
     outputLines.push(`Grand Total: ${grandTotal.toFixed(2)} EUR`);
     outputLines.push(`Total Tax Collected: ${totalTaxCollected.toFixed(2)} EUR`);
 
     const result = outputLines.join('\n');
-
     // Side effects: print + file write
     console.log(result);
 
